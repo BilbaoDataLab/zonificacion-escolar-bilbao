@@ -13,20 +13,33 @@ library(rgdal)
 
 # ------ Carga datos ------
 # Carga relación de centros escolares y zonas
-centros <- read.delim("data/centros-zonas.csv",sep = ",")
+centros_zonas <- read.delim("data/centros-zonas.csv",sep = ",")
+
+# Locacalización centros escolares
+centros_loc <- readOGR("data/centros-escolares-bilbao.geojson")
+
 # Carga contornos de zonas escolares
 zonas <- readOGR("data/zonificacion-escolar-bilbao.geojson")
 distritos <- readOGR("data/distritos-bilbao.geojson")
 
 levels(zonas@data$SEC_PROV_D)
-levels(centros$zona)
+levels(centros_zonas$zona)
 
-# ------ Plot map con todas las zonas ------
+# ---- Prepara data frame con ubiación de centros escolares 
+centros_df <- as.data.frame(centros_loc)
+names(centros_df)[6:7] <- c("lon","lat")
+
+# Guarda solamente los centros escolares (y no muestra los centros administrativos (3) o centros de apoyo(10))
+centros_df <- centros_df[centros_df$Zentro_mot=="Ikastetxea / Centro escolar",]
+
+# ------ Plot map con todas las zonas y centros escolares ------
 ggplot() +
+  # dibuja distritos
+  geom_path(data=distritos,aes(x=long, y=lat,group=group), colour="orange",size = 1) +
   geom_path(data=zonas,aes(x=long, y=lat,group=group), colour="black",size = 0.1) +
-  # geom_polygon(data = zonas[zonas@data$SEC_PROV_D =="430601-ABANDO", ], 
-               # aes(x = long, y = lat, group = group), 
-               # color = "black", alpha = 0.3, size = 0.05) +
+  # geom_polygon(data = zonas[zonas@data$SEC_PROV_D =="430601-ABANDO", ], aes(x = long, y = lat, group = group), color = "black", alpha = 0.3, size = 0.05) +
+  # dibuja puntos de centros escolares
+  geom_point(data=centros_df,aes(x=lon, y=lat),size = 0.05) +
   theme_nothing(legend = TRUE) +
   theme(legend.position="bottom",
         plot.title = element_text(size=16),
@@ -34,20 +47,23 @@ ggplot() +
 
 # ------------ Dibuja zonas de un centro --------------
 centro_select <- "014105 - CEIP Artatse HLHI"
-centros[centros$centro == centro_select,]
+centros_zonas[centros_zonas$centro == centro_select,]
 
 # Save image
 png(filename=paste("images/",centro_select,".png", sep = ""),width = 600,height = 450)
 ggplot() +
   # rellena regiones con valor max
-  geom_polygon(data = zonas[zonas@data$SEC_PROV_D %in% centros[centros$centro == centro_select & centros$puntos == "max","zona"], ],
+  geom_polygon(data = zonas[zonas@data$SEC_PROV_D %in% centros_zonas[centros_zonas$centro == centro_select & centros_zonas$puntos == "max","zona"], ],
             aes(x=long, y=lat,group=group), fill="orange",size = 0.1) +
   # rellena regiones con valor min
-  geom_polygon(data = zonas[zonas@data$SEC_PROV_D %in% centros[centros$centro == centro_select & centros$puntos == "min","zona"], ],
+  geom_polygon(data = zonas[zonas@data$SEC_PROV_D %in% centros_zonas[centros_zonas$centro == centro_select & centros_zonas$puntos == "min","zona"], ],
                aes(x=long, y=lat,group=group), fill="orange", alpha=0.3,size = 0.1) +
   # dibuja contornos de todas las zonas
   geom_path(data=zonas,aes(x=long, y=lat,group=group), colour="black",size = 0.1) +
+  # dibuja distritos
   geom_path(data=distritos,aes(x=long, y=lat,group=group), colour="black",size = 0.5) +
+  # dibuja puntos de centros escolares
+  geom_point(data=centros_df,aes(x=lon, y=lat),size = 0.05) +
   theme_minimal(base_family = "Roboto Condensed", base_size = 12) +
   theme(
     panel.grid.minor.y = element_blank(),
@@ -66,7 +82,7 @@ ggplot() +
 dev.off()
 
 # ------- Plot zonas de todos los centros -------------------
-centros_list <- levels(centros$centro)
+centros_list <- levels(centros_zonas$centro)
 
 for (i in 56:length(centros_list)) {
   # Zonas de un centro
@@ -78,10 +94,10 @@ for (i in 56:length(centros_list)) {
   png(filename=paste("images/",centro_select,".png", sep = ""),width = 600,height = 500)
   p <- ggplot() +
     # rellena regiones con valor max
-    geom_polygon(data = zonas[zonas@data$SEC_PROV_D %in% centros[centros$centro == centro_select & centros$puntos == "max","zona"], ],
+    geom_polygon(data = zonas[zonas@data$SEC_PROV_D %in% centros_zonas[centros_zonas$centro == centro_select & centros_zonas$puntos == "max","zona"], ],
                  aes(x=long, y=lat,group=group), fill="orange",size = 0.1) +
     # rellena regiones con valor min
-    geom_polygon(data = zonas[zonas@data$SEC_PROV_D %in% centros[centros$centro == centro_select & centros$puntos == "min","zona"], ],
+    geom_polygon(data = zonas[zonas@data$SEC_PROV_D %in% centros_zonas[centros_zonas$centro == centro_select & centros_zonas$puntos == "min","zona"], ],
                  aes(x=long, y=lat,group=group), fill="orange", alpha=0.3,size = 0.1) +
     # dibuja contornos de todas las zonas
     geom_path(data=zonas,aes(x=long, y=lat,group=group), colour="black",size = 0.1) +
