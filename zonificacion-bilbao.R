@@ -10,6 +10,7 @@ library(tidyverse)
 library(ggmap)
 library(rgdal)
 library(gsubfn) # select text in the parenthesis with regex
+library(OpenStreetMap)
 
 # ------ Carga datos ------
 # Carga relación de centros escolares y zonas
@@ -60,14 +61,29 @@ centro_select <- "015360 - CEIP Miribilla HLHI"
 centro_select_name <- toupper((strapplyc( centro_select, "[0-9]* - (.*)", simplify = TRUE)))
 # centros_zonas[centros_zonas$centro == centro_select,]
 
+# check projection of map
+proj4string(distritos)
+
+# Descarga base cartográfica
+map <- openmap(c(lat = 43.26596 + 0.027, lon = -2.93141  - 0.09), 
+               c(lat = 43.26596 - 0.065, lon = -2.93141 + 0.055),
+              type = "osm")
+mapLatLon <- openproj(map, projection = "+proj=utm +zone=30 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" )
+# Ejemplo de mapa sencillo
+# g <- autoplot(mapLatLon)
+# g <- g + geom_path(data=distritos,aes(x=long, y=lat,group=group), 
+#                    colour="red",alpha=0.6,size = 2) # linetype="dotted"
+
 # Save image
-png(filename=paste("images/",centro_select,".png", sep = ""),width = 600,height = 450)
-ggplot() +
+png(filename=paste("images/base-cartografica/",centro_select,"_osm.png", sep = ""),width = 1600,height = 1200)
+# ggplot() +
+  # añade base cartográfica
+  autoplot(mapLatLon) +
   # dibuja distritos
   geom_path(data=distritos,aes(x=long, y=lat,group=group), colour="grey",alpha=0.6,size = 2) + # linetype="dotted"
   # rellena regiones con valor max
   geom_polygon(data = zonas[zonas@data$SEC_PROV_D %in% centros_zonas[centros_zonas$centro == centro_select & centros_zonas$puntos == "max","zona"], ],
-            aes(x=long, y=lat,group=group), fill="orange",size = 0.1) +
+            aes(x=long, y=lat,group=group), fill="orange",alpha=0.8,size = 0.1) +
   # rellena regiones con valor min
   geom_polygon(data = zonas[zonas@data$SEC_PROV_D %in% centros_zonas[centros_zonas$centro == centro_select & centros_zonas$puntos == "min","zona"], ],
                aes(x=long, y=lat,group=group), fill="orange", alpha=0.3,size = 0.1) +
