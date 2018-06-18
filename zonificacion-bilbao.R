@@ -22,6 +22,7 @@ centros_loc <- readOGR("data/centros-escolares-bilbao.geojson")
 # Carga contornos de zonas escolares
 zonas <- readOGR("data/zonificacion-escolar-bilbao.geojson")
 distritos <- readOGR("data/distritos-bilbao.geojson")
+ria <- readOGR("data/ria.geojson")
 
 levels(zonas@data$SEC_PROV_D)
 levels(centros_zonas$zona)
@@ -39,6 +40,7 @@ names(centros_df)[6:7] <- c("lon","lat")
 centros_df <- centros_df[centros_df$Zentro_mot=="Ikastetxea / Centro escolar",]
 
 # ------ Plot map con todas las zonas y centros escolares ------
+png(filename=paste("images/centros_zonas-escolares_distritos-bilbao.png", sep = ""),width = 600,height = 450)
 ggplot() +
   # dibuja distritos
   geom_path(data=distritos,aes(x=long, y=lat,group=group), colour="orange",size = 1) +
@@ -50,15 +52,19 @@ ggplot() +
   theme(legend.position="bottom",
         plot.title = element_text(size=16),
         legend.text=element_text(size=12))
+# close save image
+dev.off()
 
 # ------------ Dibuja zonas de un centro --------------
-centro_select <- "014105 - CEIP Artatse HLHI"
+centro_select <- "015360 - CEIP Miribilla HLHI"
 centro_select_name <- toupper((strapplyc( centro_select, "[0-9]* - (.*)", simplify = TRUE)))
 # centros_zonas[centros_zonas$centro == centro_select,]
 
 # Save image
 png(filename=paste("images/",centro_select,".png", sep = ""),width = 600,height = 450)
 ggplot() +
+  # dibuja distritos
+  geom_path(data=distritos,aes(x=long, y=lat,group=group), colour="grey",size = 2) +
   # rellena regiones con valor max
   geom_polygon(data = zonas[zonas@data$SEC_PROV_D %in% centros_zonas[centros_zonas$centro == centro_select & centros_zonas$puntos == "max","zona"], ],
             aes(x=long, y=lat,group=group), fill="orange",size = 0.1) +
@@ -67,12 +73,13 @@ ggplot() +
                aes(x=long, y=lat,group=group), fill="orange", alpha=0.3,size = 0.1) +
   # dibuja contornos de todas las zonas
   geom_path(data=zonas,aes(x=long, y=lat,group=group), colour="black",size = 0.1) +
-  # dibuja distritos
-  geom_path(data=distritos,aes(x=long, y=lat,group=group), colour="black",size = 0.5) +
   # dibuja puntos de centros escolares
   geom_point(data=centros_df,aes(x=lon, y=lat),size = 0.05) +
+  # Ría
+  geom_polygon(data = ria,
+               aes(x=long, y=lat,group=group), fill="blue", alpha=0.6,size = 0.1) +
   # dibuja punto de centro destacado
-  geom_point(data=centros_df[centros_df$Izena_Nomb==centro_select_name,],aes(x=lon, y=lat),size = 2,color="red") +
+  geom_point(data=centros_df[centros_df$Izena_Nomb==centro_select_name,],aes(x=lon, y=lat),size = 3,color="red") +
   theme_minimal(base_family = "Roboto Condensed", base_size = 12) +
   theme(
     panel.grid.minor.y = element_blank(),
