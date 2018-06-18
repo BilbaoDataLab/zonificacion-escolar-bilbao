@@ -16,6 +16,7 @@ library(rgdal)
 centros <- read.delim("data/centros-zonas.csv",sep = ",")
 # Carga contornos de zonas escolares
 zonas <- readOGR("data/zonificacion-escolar-bilbao.geojson")
+distritos <- readOGR("data/distritos-bilbao.geojson")
 
 levels(zonas@data$SEC_PROV_D)
 levels(centros$zona)
@@ -46,6 +47,7 @@ ggplot() +
                aes(x=long, y=lat,group=group), fill="orange", alpha=0.3,size = 0.1) +
   # dibuja contornos de todas las zonas
   geom_path(data=zonas,aes(x=long, y=lat,group=group), colour="black",size = 0.1) +
+  geom_path(data=distritos,aes(x=long, y=lat,group=group), colour="black",size = 0.5) +
   theme_minimal(base_family = "Roboto Condensed", base_size = 12) +
   theme(
     panel.grid.minor.y = element_blank(),
@@ -66,7 +68,7 @@ dev.off()
 # ------- Plot zonas de todos los centros -------------------
 centros_list <- levels(centros$centro)
 
-for (i in 1:length(centros_list)) {
+for (i in 56:length(centros_list)) {
   # Zonas de un centro
   centro_select <- centros_list[i]
   print(i)
