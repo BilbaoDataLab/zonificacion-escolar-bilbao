@@ -9,13 +9,14 @@
 library(tidyverse)
 library(ggmap)
 library(rgdal)
-# library(dplyr)
+library(gsubfn) # select text in the parenthesis with regex
 
 # ------ Carga datos ------
 # Carga relación de centros escolares y zonas
 centros_zonas <- read.delim("data/centros-zonas.csv",sep = ",")
 
 # Locacalización centros escolares
+# centros_loc2 <- read.delim("data/centros-escolares-bilbao.csv",sep = ",")
 centros_loc <- readOGR("data/centros-escolares-bilbao.geojson")
 
 # Carga contornos de zonas escolares
@@ -25,7 +26,12 @@ distritos <- readOGR("data/distritos-bilbao.geojson")
 levels(zonas@data$SEC_PROV_D)
 levels(centros_zonas$zona)
 
-# ---- Prepara data frame con ubiación de centros escolares 
+# ---- Prepara datos ------
+
+# Crea campo de listado centros zonas con nombre limpio y en mayúsculas, para que coincida con listado de centros
+centros_zonas$centro_sin <- toupper((strapplyc( centros_zonas$centro, "[0-9]* - (.*)", simplify = TRUE)))
+
+# Preparar data frame con ubiación de centros escolares 
 centros_df <- as.data.frame(centros_loc)
 names(centros_df)[6:7] <- c("lon","lat")
 
@@ -47,7 +53,8 @@ ggplot() +
 
 # ------------ Dibuja zonas de un centro --------------
 centro_select <- "014105 - CEIP Artatse HLHI"
-centros_zonas[centros_zonas$centro == centro_select,]
+centro_select_name <- toupper((strapplyc( centro_select, "[0-9]* - (.*)", simplify = TRUE)))
+# centros_zonas[centros_zonas$centro == centro_select,]
 
 # Save image
 png(filename=paste("images/",centro_select,".png", sep = ""),width = 600,height = 450)
@@ -64,6 +71,8 @@ ggplot() +
   geom_path(data=distritos,aes(x=long, y=lat,group=group), colour="black",size = 0.5) +
   # dibuja puntos de centros escolares
   geom_point(data=centros_df,aes(x=lon, y=lat),size = 0.05) +
+  # dibuja punto de centro destacado
+  geom_point(data=centros_df[centros_df$Izena_Nomb==centro_select_name,],aes(x=lon, y=lat),size = 2,color="red") +
   theme_minimal(base_family = "Roboto Condensed", base_size = 12) +
   theme(
     panel.grid.minor.y = element_blank(),
@@ -84,9 +93,11 @@ dev.off()
 # ------- Plot zonas de todos los centros -------------------
 centros_list <- levels(centros_zonas$centro)
 
-for (i in 56:length(centros_list)) {
+for (i in 1:length(centros_list)) {
   # Zonas de un centro
   centro_select <- centros_list[i]
+  centro_select_name <- toupper((strapplyc( centro_select, "[0-9]* - (.*)", simplify = TRUE)))
+  
   print(i)
   print(centro_select)
   
@@ -101,6 +112,12 @@ for (i in 56:length(centros_list)) {
                  aes(x=long, y=lat,group=group), fill="orange", alpha=0.3,size = 0.1) +
     # dibuja contornos de todas las zonas
     geom_path(data=zonas,aes(x=long, y=lat,group=group), colour="black",size = 0.1) +
+    # dibuja distritos
+    geom_path(data=distritos,aes(x=long, y=lat,group=group), colour="black",size = 0.5) +
+    # dibuja puntos de centros escolares
+    geom_point(data=centros_df,aes(x=lon, y=lat),size = 0.05) +
+    # dibuja punto de centro destacado
+    geom_point(data=centros_df[centros_df$Izena_Nomb==centro_select_name,],aes(x=lon, y=lat),size = 2,color="red") +
     theme_minimal(base_family = "Roboto Condensed", base_size = 12) +
     theme(
       panel.grid.minor.y = element_blank(),
