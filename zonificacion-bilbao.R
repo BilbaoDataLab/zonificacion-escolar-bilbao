@@ -137,10 +137,10 @@ for (i in 1:length(centros_list)) {
   print(centro_select)
   
   # Save image
-  png(filename=paste("images/",centro_select_clean,".png", sep = ""),width = 720,height = 600)
+  png(filename=paste("images/g/",centro_select_clean,".png", sep = ""),width = 873,height = 728)
   p <- ggplot() +
     # dibuja distritos
-    geom_path(data=distritos,aes(x=long, y=lat,group=group), colour="grey",alpha=0.6,size = 2) + # linetype="dotted"
+    geom_path(data=distritos,aes(x=long, y=lat,group=group), colour="grey",alpha=0.6,size = 3) + # linetype="dotted"
     # rellena regiones con valor max
     geom_polygon(data = zonas[zonas@data$SEC_PROV_D %in% centros_zonas[centros_zonas$centro == centro_select & centros_zonas$puntos == "max","zona"], ],
                  aes(x=long, y=lat,group=group), fill="orange", alpha=0.8,size = 0.1) +
@@ -150,12 +150,12 @@ for (i in 1:length(centros_list)) {
     # dibuja contornos de todas las zonas
     geom_path(data=zonas,aes(x=long, y=lat,group=group), colour="black",size = 0.1) +
     # dibuja puntos de centros escolares
-    geom_point(data=centros_df,aes(x=lon, y=lat),size = 0.05) +
+    geom_point(data=centros_df,aes(x=lon, y=lat),size = 0.1) +
     # Ría
     geom_polygon(data = ria, aes(x=long, y=lat,group=group), fill="#00aeef", alpha=0.4,size = 0.1) +
     # dibuja punto de centro destacado
-    geom_point(data=centros_df[centros_df$EAEKOD_COD==centro_select_code,],aes(x=lon, y=lat),size = 3,color="red") +
-    geom_point(data=centros_df[centros_df$EAEKOD_COD==centro_select_code,],aes(x=lon, y=lat),size = 3,color="black",shape=3) +
+    geom_point(data=centros_df[centros_df$EAEKOD_COD==centro_select_code,],aes(x=lon, y=lat),size = 4,color="red") +
+    geom_point(data=centros_df[centros_df$EAEKOD_COD==centro_select_code,],aes(x=lon, y=lat),size = 4,color="black",shape=3) +
     theme_minimal(base_family = "Roboto Condensed", base_size = 12) +
     theme(
       panel.grid.minor.y = element_blank(),
