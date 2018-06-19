@@ -19,6 +19,7 @@ centros_zonas <- read.delim("data/centros-zonas.csv",sep = ",")
 # Locacalización centros escolares
 # centros_loc2 <- read.delim("data/centros-escolares-bilbao.csv",sep = ",")
 centros_loc <- readOGR("data/centros-escolares-bilbao.geojson")
+centros_extrainfo <- read.delim("data/centros-docentes-no-universitarios-euskadi.csv",sep = ";",fileEncoding = "iso-8859-1")
 
 # Carga contornos de zonas escolares
 zonas <- readOGR("data/zonificacion-escolar-bilbao.geojson")
@@ -43,8 +44,16 @@ names(centros_df)[6:7] <- c("lon","lat")
 
 # Guarda solamente los centros escolares (y no muestra los centros administrativos (3) o centros de apoyo(10))
 # centros_df <- centros_df[centros_df$Zentro_mot=="Ikastetxea / Centro escolar",]
-# Guarda solamente
+# Guarda solamente los que están en la lista de centros-zonas
 centros_df <- centros_df[centros_df$EAEKOD_COD %in% levels(centros_zonas$centro_code),]
+
+# Añade 0 delante del código de cada centro
+centros_extrainfo$code <- paste("0",as.character(centros_extrainfo$CCEN),sep = "")
+
+# Une los datos de los centros con los de extra info
+centros_df <- merge(centros_df,centros_extrainfo[,c("DGENRC","DGENRE","GENR","DEPE","DTITUC","code")],by.x="EAEKOD_COD",by.y="code",all.x=FALSE)
+
+levels(centros_df$DTITUC) <- c("Pública","Otros públicos","Privada")
 
 # ------ Plot map con todas las zonas y centros escolares ------
 png(filename=paste("images/centros_zonas-escolares_distritos-bilbao.png", sep = ""),width = 600,height = 450)
@@ -136,6 +145,11 @@ for (i in 1:length(centros_list)) {
   print(i)
   print(centro_select)
   
+  if ( centros_df[centros_df$EAEKOD_COD==centro_select_code,]$DTITUC == "Pública" ) 
+   { col <- "red"} 
+  else
+   { col <- "blue"}
+  
   # Save image
   png(filename=paste("images/g/",centro_select_clean,".png", sep = ""),width = 873,height = 728)
   p <- ggplot() +
@@ -150,22 +164,24 @@ for (i in 1:length(centros_list)) {
     # dibuja contornos de todas las zonas
     geom_path(data=zonas,aes(x=long, y=lat,group=group), colour="black",size = 0.1) +
     # dibuja puntos de centros escolares
-    geom_point(data=centros_df,aes(x=lon, y=lat),size = 0.1) +
+    scale_colour_manual(values=c("red","blue")) +
+    geom_point(data=centros_df,aes(x=lon, y=lat,color=DTITUC),size = 0.8) +
     # Ría
     geom_polygon(data = ria, aes(x=long, y=lat,group=group), fill="#00aeef", alpha=0.4,size = 0.1) +
     # dibuja punto de centro destacado
-    geom_point(data=centros_df[centros_df$EAEKOD_COD==centro_select_code,],aes(x=lon, y=lat),size = 4,color="red") +
-    geom_point(data=centros_df[centros_df$EAEKOD_COD==centro_select_code,],aes(x=lon, y=lat),size = 4,color="black",shape=3) +
-    theme_minimal(base_family = "Roboto Condensed", base_size = 12) +
+    geom_point(data=centros_df[centros_df$EAEKOD_COD==centro_select_code,],aes(x=lon, y=lat),size = 6,color=col) +
+    geom_point(data=centros_df[centros_df$EAEKOD_COD==centro_select_code,],aes(x=lon, y=lat),size = 6,color="black",shape=3) +
+    theme_minimal(base_family = "Roboto Condensed", base_size = 16) +
     theme(
       panel.grid.minor.y = element_blank(),
       panel.grid.major.y = element_blank(),
       panel.grid.minor.x = element_blank(),
       panel.grid.major.x = element_blank(),
       axis.text.x=element_blank(),
-      axis.text.y=element_blank()
+      axis.text.y=element_blank(),
+      legend.position="none"
     ) +
-    labs(title=paste("Zonificación escolar para",centro_select),
+    labs(title=paste("Zonificación escolar para ",centro_select," (",centros_df[centros_df$EAEKOD_COD ==centro_select_code,]$DTITUC,")",sep = ""),
          subtitle = "",
          x = "",
          y = "",
